@@ -1,0 +1,13 @@
+@springbootapplication enables 
+
+-spring context
+- auto config
+- auto compoenent scan
+
+springapplication.run - to run spring context
+returns application context
+u can get all beans 
+
+calling applicationContext.getBeans u can see all beans getting initialised
+
+Spring Boot looks at a) Frameworks available on the CLASSPATH b) Existing configuration for the application. Based on these, Spring Boot provides basic configuration needed to configure the application with these frameworks. This is called Auto Configuration.
