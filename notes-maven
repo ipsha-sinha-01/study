@@ -1,0 +1,16 @@
+1. difference in between pom and effective pom
+
+
+The Super POM
+
+All Maven project POMs extend the Super POM, which defines a set of defaults shared by all projects.
+
+The Simplest POM
+
+All Maven POMs inherit defaults from the Super POM. If you are just writing a simple project that produces a JAR from some source in src/main/java, want to run your JUnit tests in src/test/java, and want to build a project site using mvn site, you don’t have to customize anything. All you would need, in this case, is the simplest possible POM shown in The Simplest POM. This POM defines a groupId, artifactId, and version: the three required coordinates for every project.
+
+The Effective POM
+
+The merge between the Super POM and the POM from The Simplest POM.
+
+** This info was extracted from the following link (in the link the explanation is very complete)
