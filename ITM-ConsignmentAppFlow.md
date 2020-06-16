@@ -154,6 +154,13 @@ The above flow is achieved in below listed logic apps :
 
 11.	Shipment with associated Order Ids is saved in Azure Table Storage _"Shipments"_.
 
+12. The orders are passed to function _"group-orders-for-consignment"_ in HTTP POST request. The function groups the orders that have same payment term, currency, source, destination together to form group of orders that should go into one consignment. 
+	Sample output : 
+
+	- [ [O1, O2], O3 ]
+	
+	In this case [O1, O2] are grouped together on the basis of same payment terms, currency, source and destination. O1 and O2 should go into one consignment.   
+
 12.	A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders whose status is READY FOR CONSIGNMENT.
 
 
@@ -166,13 +173,18 @@ The above flow is achieved in below listed logic apps :
 
 1. As soon as the message is received in the queue _"q-ready-for-consignment"_, Logic app _"la-create-consignment"_ is triggered.
 
-2. List of orders ready for consignments is read from the message received from "q-ready-for-consignment". 
+2. List of orders ready for consignments is read from the message received from "q-ready-for-consignment". The list is in below format : 
+
+	- [ [O1, O2], O3 ]
+	
+	In this case O1 and o2 
 
 3. For the first Order from Orders List, it is verified if the Order already has Consignment ID in _"orders"_ table.
 	
-	- If no, A new random Consignment Id is generated. 
+	- If not present, A new random Consignment Id is generated. 
+	- If present, 
 
-4. For the first Order, Full form Order json from Blob storage _"orders"_ is loaded. The Order json is copied to create new Consignment json. 
+4. For the first Order, Full form Order json from Blob storage _"gps-orders"_ is loaded. The Order json is copied to create new Consignment json. 
 
 6. In the Consignment json
 
@@ -183,15 +195,15 @@ The above flow is achieved in below listed logic apps :
 	
 7. For each Order in List of Orders : 
 
-	 - Full form Order json from Blob storage _"orders"_ is loaded
+	 - Full form Order json from Blob storage _"gps-orders"_ is loaded
 	 
 	 - Ship Units Array is extracted from Order json
 	 
-	 - Order Id in the Ship Units is replaced with <consignmentId>, domain name is retained.
+	 - Order Id in the Ship Units is replaced with consignmentId, domain name is retained.
 		 
 	 - Ship Units array is passed in HTTP POST request to Function app _"add-order-release-tag"_  
 	 
-	 - The function adds attribute "tag1" in order release line of the ship unit as Order's original order release Id. A new counter is created. For each ship unit the counter incremented and set in the following fields - 
+	 - In the function, attribute "tag1" is set as Order's original order release Id. For each ship unit the an incrementing counter is appended to the following fields - 
 	 
 	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ;
 	   
