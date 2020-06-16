@@ -15,7 +15,8 @@ Logic App :
 
 4. "la-upload-shipment"
 
-Function App : 
+
+Function App "fa-util" functions : 
 
 
 1. "group-orders-for-consignment"
@@ -70,8 +71,9 @@ The above flow is achieved in below listed logic apps :
 
 
 
-
+<br/><br/>
 ### "la-upload-shipment"
+<br/><br/>
 
 
 
@@ -92,9 +94,9 @@ The above flow is achieved in below listed logic apps :
 
 
 
-
+<br/><br/>
 ### "la-create-order-shipment-relationship"
-
+<br/><br/>
 
 
 
@@ -164,9 +166,9 @@ The above flow is achieved in below listed logic apps :
 
 
 
-
+<br/><br/>
 ### "la-create-consignment"
-
+<br/><br/>
 
 
 1. As soon as the message is received in the queue _"q-ready-for-consignment"_, Logic app _"la-create-consignment"_ is triggered.
