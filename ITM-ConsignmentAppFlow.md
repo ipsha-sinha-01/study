@@ -43,7 +43,16 @@
 ![Image of Consignment Creation Flow](https://hclo365.sharepoint.com/:i:/r/sites/OTM_AzureTeam/Shared%20Documents/General/Helper-docs/ConsignmentApp-CreateConsignmentFlow.PNG?csf=1&web=1&e=IbIVio)
 
 
+
+
+
+The above flow is achieved in below listed logic apps :
+
+
+
 ### "la-upload-shipment"
+
+
 
 1. As soon as the Shipment is approved, OTM POSTs the Shipment XML to Logic app "la-upload-shipment". 
 
@@ -61,7 +70,10 @@
 
 
 
+
 ### "la-create-order-shipment-relationship"
+
+
 
 1. As soon as the message is received in the queue _"q-shipment-received-from-otm"_, Logic app _"la-create-order-shipment-relationship"_ is triggered. 
 
@@ -161,7 +173,7 @@
 
 	- Order Id is replaced with <consignmentId>, domain name is retained.
 	
-	- ship unit array is emptied.
+	- Ship unit array is emptied.
 	
 	
 7. For each Order in List of Orders : 
@@ -176,17 +188,31 @@
 	 
 	 - The function adds attribute "tag1" in order release line of the ship unit as Order's original order release Id. A new counter 	    is created. For each ship unit the counter incremented and set in the following fields - 
 	 
-	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ; 
-	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->shipUnitGid, orderReleaseLineGid ; 
+	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ;
+	   
+	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->shipUnitGid, orderReleaseLineGid ;
+	   
 	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->orderReleaseLine->orderReleaseLineBeanData-> orderReleaseLineGid, orderReleaseLineXid
+	   
+	   
 	   Domain name is retained whereever applicable. 
 	   
 	   
 	 	 
-	 - Ship Units are added to the Consignment json created in step 6 above. 
+	 - Updated Ship Units returned by the function are added to the Consignment json created in step 6 above. 
 
 
+8. Consignment object with aggregated ship units is passed in HTTP POST request to function app _"translate-consignment"_. 
 
+9. Function sums up the total weight, total volume, total new weight, total new volume, total packaging units, total ship units, total item package from the individual ship units. These values are set in header level attributes of Consignment json.
+
+10. HTTP POST request is made to OTM with the Consignment json. 
+
+11. Consignment json is saved into Azure Blon Storage _"consignments"_.
+
+12. Consignment with list of assocaiated Order Ids is saved in _"consignments"_ table. 
+
+13. Order is updated in _"Order"_ table with the consignment Id. 
 
 
 
