@@ -4,40 +4,59 @@
 ## Components : 
 
 
-1. Logic App : "la-upload-shipment"
+Logic App : 
 
-2. Logic App : "la-create-order-shipment-relationship"
 
-3. Logic App : "la-create-consignment"
+1. "la-upload-shipment"
 
-4. Logic App : "la-upload-shipment"
+2. "la-create-order-shipment-relationship"
 
-5. Function App : "group-orders-for-consignment"
+3. "la-create-consignment"
 
-6. Function App : "order-ready-for-consignment"
+4. "la-upload-shipment"
 
-7. Function App : "add-order-release-tag"
+Function App : 
 
-8. Function App : "translate-consignment"
+
+1. "group-orders-for-consignment"
+
+2. "order-ready-for-consignment"
+
+3. "add-order-release-tag"
+
+4. "translate-consignment"
  
-9. Azure Blob Storage : "shipments"
 
-10. Azure Blob Storage : "gpsorders"
 
-11. Azure Blob Storage : "consignments"
+Azure Blob Storage : 
 
-12. Service bus Queue : "q-shipment-received-from-otm"
+1. "shipments"
 
-13. Service bus Queue : "q-ready-for-consignment
+2. "gpsorders"
 
-14. Azure Table Storage : "orders"
+3. "consignments"
 
-15. Azure Table Storage : "shipments"
 
-16. Azure Table Storage : "consignments"
+Service bus Queue : 
+
+1. "q-shipment-received-from-otm"
+
+2. "q-ready-for-consignment
+
+
+
+Azure Table Storage : 
+
+1. "orders"
+
+2. "shipments"
+
+3. "consignments"
+
 
 
 ## Consignment App Flow
+
 
 
 ![Image of Consignment Creation Flow](https://hclo365.sharepoint.com/:i:/r/sites/OTM_AzureTeam/Shared%20Documents/General/Helper-docs/ConsignmentApp-CreateConsignmentFlow.PNG?csf=1&web=1&e=IbIVio)
@@ -50,7 +69,10 @@ The above flow is achieved in below listed logic apps :
 
 
 
+
+
 ### "la-upload-shipment"
+
 
 
 
@@ -75,6 +97,7 @@ The above flow is achieved in below listed logic apps :
 
 
 
+
 1. As soon as the message is received in the queue _"q-shipment-received-from-otm"_, Logic app _"la-create-order-shipment-relationship"_ is triggered. 
 
 2. Shipment Json File path is read from the message. Json File is loaded from blob storage _"shipments"_.
@@ -83,22 +106,6 @@ The above flow is achieved in below listed logic apps :
 
 4. The function transforms full form Shipment into Simplfied Shipment json. The translated shipment contains an array of Orders having Order Id, Shipment Id, Shipment Source, Shipment destination. 
 	
-	Sample Simplified Shipment with two orders : 
-	
-		[
-			  {
-				"orderId": "I.ITM-B9264A205ECC-001",
-				"shipmentId": "I.01264",
-				"source": "I.18748-SUP-8",
-				"destination": "I.310-DT-1"
-			  },
-			  {
-				"orderId": "I.ITM-B9264A205ECC-002",
-				"shipmentId": "I.01264",
-				"source": "I.18748-SUP-8",
-				"destination": "I.310-DT-1"
-			  }
-		]
 
 5. For each Order in the Simplified Shipment
 
@@ -156,7 +163,10 @@ The above flow is achieved in below listed logic apps :
 
 
 
+
+
 ### "la-create-consignment"
+
 
 
 1. As soon as the message is received in the queue _"q-ready-for-consignment"_, Logic app _"la-create-consignment"_ is triggered.
