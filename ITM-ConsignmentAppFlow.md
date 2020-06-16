@@ -160,9 +160,9 @@ The above flow is achieved in below listed logic apps :
 
 	- [ [O1, O2], O3 ]
 	
-	In this case [O1, O2] are grouped together on the basis of same payment terms, currency, source and destination. O1 and O2 should go into one consignment and O3 into another consignment.    
+	In this case [O1, O2] are grouped together on the basis of same payment terms, currency, source and destination. 
 
-12.	A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders whose status is READY FOR CONSIGNMENT.
+12.	A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders groups whose status is READY FOR CONSIGNMENT.
 
 
 
@@ -187,9 +187,8 @@ The above flow is achieved in below listed logic apps :
 
 	c) In the Consignment json
 
-		- Order Id is replaced with consignmentId, domain name is retained.
-	
-		- Ship unit array is emptied.
+	- Order Id is replaced with consignmentId, domain name is retained.	
+	- Ship unit array is emptied.
 	
 	
 4. For each Order in group of Orders : 
@@ -198,11 +197,11 @@ The above flow is achieved in below listed logic apps :
 	 
 	 - Ship Units Array is extracted from Order json
 	 
-	 - Order Id in the Ship Units is replaced with consignmentId, domain name is retained.
+	 - Order Release Id in the Ship Units are replaced with consignmentId, domain name is retained.
 		 
 	 - Ship Units array is passed in HTTP POST request to Function app _"add-order-release-tag"_  
 	 
-	 - In the function, attribute "tag1" is set as Order's original order release Id. For each ship unit the an incrementing counter is appended to the following fields ( domain name is retained) 
+	 - In the function, attribute "tag1" is set as Order's original order release Id. For each ship unit an incrementing counter is appended to the following fields : 
 	 
 	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ;
 	   
@@ -218,15 +217,15 @@ The above flow is achieved in below listed logic apps :
 
 5. Consignment object with aggregated ship units is passed in HTTP POST request to function app _"translate-consignment"_. 
 
-6. Function sums up the total weight, total volume, total new weight, total new volume, total packaging units, total ship units, total item package from the individual ship units. These values are set in header level attributes of Consignment json.
+6. The function sums up the total weight, total volume, total new weight, total new volume, total packaging units, total ship units, total item package from the individual ship units. These values are set in header level attributes of Consignment json.
 
 7.  HTTP POST request is made to OTM with the Consignment json. 
 
-8.  Consignment json is saved into Azure Blon Storage _"consignments"_.
+8.  Full form Consignment json is saved into Azure Blob Storage _"consignments"_.
 
-9.  Consignment with list of assocaiated Order Ids is saved in _"consignments"_ table. 
+9.  Consignment Id, list of assocaiated Order Ids is saved in _"consignments"_ table. 
 
-10.  Order is updated in _"Order"_ table with the consignment Id. 
+10.  Order entry in _"Order"_ table is updated with the consignment Id. 
 
 
 
