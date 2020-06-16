@@ -217,13 +217,13 @@ The above flow is achieved in below listed logic apps :
 
 9. Function sums up the total weight, total volume, total new weight, total new volume, total packaging units, total ship units, total item package from the individual ship units. These values are set in header level attributes of Consignment json.
 
-10. HTTP POST request is made to OTM with the Consignment json. 
+10.  HTTP POST request is made to OTM with the Consignment json. 
 
-11. Consignment json is saved into Azure Blon Storage _"consignments"_.
+11.  Consignment json is saved into Azure Blon Storage _"consignments"_.
 
-12. Consignment with list of assocaiated Order Ids is saved in _"consignments"_ table. 
+12.  Consignment with list of assocaiated Order Ids is saved in _"consignments"_ table. 
 
-13. Order is updated in _"Order"_ table with the consignment Id. 
+13.  Order is updated in _"Order"_ table with the consignment Id. 
 
 
 
