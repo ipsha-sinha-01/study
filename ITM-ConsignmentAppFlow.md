@@ -90,30 +90,24 @@
 
 5. For each Order in the Simplified Shipment
 
-	- complete Order entity is loaded from Order table. 
+	- complete Order entity is loaded from _"Order"_ table. 
 
 	- simplified shipment is added to list of Shipments in the Order entity
 	
-6. Order-Shipment relationship defining json is created with Order and its associated List of _shipments_
+6. _Order-Shipment relationship_ defining json is created with Order and its associated List of _shipments_
 	
-	 Order-Shipment relationship json structure
+	 Sample Order-Shipment relationship json
 	
 		{
-		  "orderId": <orderID>,
-		  "destination": <orderDestination>,
-		  "source": <orderSource>,
+		  "orderId": "I.ITM-B9264A205ECC-001",
+		  "destination": "I.310-DT-1", (orderDestination)
+		  "source": "I.18748-SUP-8", (orderSource)
 		  "shipments": [
 				{
-				  "orderId": <orderID>,
-				  "shipmentId": <shipmentID>,
-				  "source": <shipmentSource>,
-				  "destination": <shipmentDestination>
-				}, 
-				{
-				  "orderId": <orderID>,
-				  "shipmentId": <shipmentID>,
-				  "source": <shipmentSource>,
-				  "destination": <shipmentDestination>
+				  "orderId": "I.ITM-B9264A205ECC-001",
+				  "shipmentId": "I.01264",
+				  "source": "I.18748-SUP-8", (shipmentSource)
+				  "destination": "I.310-DT-1" (shipmentDestination)
 				}
 			]
 		}
@@ -124,11 +118,11 @@
 
 9. If the above function returns "YES", the status of Order is set to READY FOR CONSIGNMENT. 
 
-8. Updated Order with Shipments array and Order Status is saved in Order table storage. 
+8. Updated Order with Shipments array and Order Status is saved in _"Order"_ table storage. 
 
 9. Simplified Shipment json is passed in HTTP POST request to Function app _"shipment-order-relationship"_. 
 
-	- A new Shipment Order Relationship is created with Shipment having list of associated Orders. 
+	- A new _Shipment Order Relationship_ is created with Shipment having list of associated Orders. 
 	
 	Sample Shipmnet-Order relationship json
 	
@@ -144,7 +138,62 @@
 			  ]
 		}
 
-10. Shipments with associated Order Ids is saved in Azure Table Storage _"Shipments"_.
+10.  Shipments with associated Order Ids is saved in Azure Table Storage _"Shipments"_.
 
-11. A new message is published to Service bus queue  _"q-ready-for-consignment"_ with orders whose status is READY FOR CONSGINMENT.
+11.  A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders whose status is READY FOR CONSIGNMENT.
+
+
+
+### "la-create-consignment"
+
+
+1. As soon as the message is received in the queue _"q-ready-for-consignment"_, Logic app _"la-create-consignment"_ is triggered.
+
+2. List of orders ready for consignments is read from the message received from "q-ready-for-consignment". 
+
+3. For the first Order from Orders List, if the Order has Consignment ID already populated is verified.
+	
+4. If yes, A new random Consignment Id <CSM><Random><Counter> is created. 
+
+5. For the first Order, Full form Order json from Blob storage _"orders"_ is loaded. The Order json is copied to create new Consignment json. 
+
+6. In the Consignment json
+
+	- Order Id is replaced with <consignmentId>, domain name is retained.
+	
+	- ship unit array is emptied.
+	
+	
+7. For each Order in List of Orders : 
+
+	 - Full form Order json from Blob storage _"orders"_ is loaded
+	 
+	 - Ship Units Array is extracted from Order json
+	 
+	 - Order Id in the Ship Units is replaced with <consignmentId>, domain name is retained
+		 
+	 - Ship Units array is passed in HTTP POST request to Function app _"add-order-release-tag"_  
+	 
+	 - The function adds attribute "tag1" in order release line of the ship unit as Order's original order release Id. A new counter 	    is created. For each ship unit the counter incremented and set in the following fields - 
+	 
+	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ; 
+	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->shipUnitGid, orderReleaseLineGid ; 
+	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->orderReleaseLine->orderReleaseLineBeanData-> orderReleaseLineGid, orderReleaseLineXid
+	   Domain name is retained whereever applicable. 
+	   
+	   
+	 	 
+	 - Ship Units are added to the Consignment json created in step 6 above. 
+
+
+
+
+
+
+
+
+
+
+	
+
 
