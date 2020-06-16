@@ -67,8 +67,8 @@ Azure Table Storage :
 The above flow is achieved in below listed logic apps :
 
 
-<br/>
-### _"la-upload-shipment"_
+<br/><br/>
+###  _"la-upload-shipment"_
 <br/>
 
 
@@ -154,12 +154,13 @@ The above flow is achieved in below listed logic apps :
 
 11.	Shipment with associated Order Ids is saved in Azure Table Storage _"Shipments"_.
 
-12. The orders are passed to function _"group-orders-for-consignment"_ in HTTP POST request. The function groups the orders that have same payment term, currency, source, destination together to form group of orders that should go into one consignment. 
-	Sample output : 
+12. The orders are passed to function _"group-orders-for-consignment"_ in HTTP POST request. The function groups the orders that have same payment term, currency, source, destination together into sub array.
+	
+	For example: 
 
 	- [ [O1, O2], O3 ]
 	
-	In this case [O1, O2] are grouped together on the basis of same payment terms, currency, source and destination. O1 and O2 should go into one consignment.   
+	In this case [O1, O2] are grouped together on the basis of same payment terms, currency, source and destination. O1 and O2 should go into one consignment and O3 into another consignment.    
 
 12.	A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders whose status is READY FOR CONSIGNMENT.
 
@@ -173,27 +174,25 @@ The above flow is achieved in below listed logic apps :
 
 1. As soon as the message is received in the queue _"q-ready-for-consignment"_, Logic app _"la-create-consignment"_ is triggered.
 
-2. List of orders ready for consignments is read from the message received from "q-ready-for-consignment". The list is in below format : 
+2. List of orders ready for consignments is read from the message received from "q-ready-for-consignment". 
 
-	- [ [O1, O2], O3 ]
-	
-	In this case O1 and o2 
+3. For each group of orders in Orders array : 
 
-3. For the first Order from Orders List, it is verified if the Order already has Consignment ID in _"orders"_ table.
+	a) The first Order from Orders group is picked, it is verified if the Order already has Consignment ID in _"orders"_ table.
 	
 	- If not present, A new random Consignment Id is generated. 
-	- If present, 
+	- If present, it represents that consignment is already created for this orders group. In this case, loop is continued for next group of Orders. 
 
-4. For the first Order, Full form Order json from Blob storage _"gps-orders"_ is loaded. The Order json is copied to create new Consignment json. 
+	b) For the first Order, Full form Order json is loaded from Blob storage _"gps-orders"_. The Order json is copied to create new Consignment json. 
 
-6. In the Consignment json
+	c) In the Consignment json
 
-	- Order Id is replaced with consignmentId, domain name is retained.
+		- Order Id is replaced with consignmentId, domain name is retained.
 	
-	- Ship unit array is emptied.
+		- Ship unit array is emptied.
 	
 	
-7. For each Order in List of Orders : 
+4. For each Order in group of Orders : 
 
 	 - Full form Order json from Blob storage _"gps-orders"_ is loaded
 	 
@@ -203,7 +202,7 @@ The above flow is achieved in below listed logic apps :
 		 
 	 - Ship Units array is passed in HTTP POST request to Function app _"add-order-release-tag"_  
 	 
-	 - In the function, attribute "tag1" is set as Order's original order release Id. For each ship unit the an incrementing counter is appended to the following fields - 
+	 - In the function, attribute "tag1" is set as Order's original order release Id. For each ship unit the an incrementing counter is appended to the following fields ( domain name is retained) 
 	 
 	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ;
 	   
@@ -212,24 +211,22 @@ The above flow is achieved in below listed logic apps :
 	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->orderReleaseLine->orderReleaseLineBeanData-> orderReleaseLineGid, orderReleaseLineXid
 	   
 	   
-	   Domain name is retained. 
-	   
 	   
 	 	 
 	 - Updated Ship Units returned by the function are added to the Consignment json created in step 6 above. 
 
 
-8. Consignment object with aggregated ship units is passed in HTTP POST request to function app _"translate-consignment"_. 
+5. Consignment object with aggregated ship units is passed in HTTP POST request to function app _"translate-consignment"_. 
 
-9. Function sums up the total weight, total volume, total new weight, total new volume, total packaging units, total ship units, total item package from the individual ship units. These values are set in header level attributes of Consignment json.
+6. Function sums up the total weight, total volume, total new weight, total new volume, total packaging units, total ship units, total item package from the individual ship units. These values are set in header level attributes of Consignment json.
 
-10.  HTTP POST request is made to OTM with the Consignment json. 
+7.  HTTP POST request is made to OTM with the Consignment json. 
 
-11.  Consignment json is saved into Azure Blon Storage _"consignments"_.
+8.  Consignment json is saved into Azure Blon Storage _"consignments"_.
 
-12.  Consignment with list of assocaiated Order Ids is saved in _"consignments"_ table. 
+9.  Consignment with list of assocaiated Order Ids is saved in _"consignments"_ table. 
 
-13.  Order is updated in _"Order"_ table with the consignment Id. 
+10.  Order is updated in _"Order"_ table with the consignment Id. 
 
 
 
