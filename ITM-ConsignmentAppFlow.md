@@ -13,8 +13,6 @@ Logic App :
 
 3. "la-create-consignment"
 
-4. "la-upload-shipment"
-
 
 Function App "fa-util" functions : 
 
@@ -69,22 +67,20 @@ Azure Table Storage :
 The above flow is achieved in below listed logic apps :
 
 
-
-
-<br/><br/>
-### "la-upload-shipment"
+<br/>
+### _"la-upload-shipment"_
 <br/>
 
 
-1. As soon as the Shipment is approved, OTM POSTs the Shipment XML to Logic app "la-upload-shipment". 
+1. As soon as the Shipment is approved, OTM POSTs the Shipment XML to Logic app _"la-upload-shipment"_. 
 
-2. Using using domain name and Shipment Xid received in Shipment XML, Shipment ID String is generated . 
+2. Using domain name and Shipment Xid received in Shipment XML, Shipment ID String is generated . 
 
 3. Shipment ID String is passed to OTM in HTTP GET request.
 	
 	- OTM responds back with  <shipmentID>.json
 
-	- <shipmentID>.json is saved into Shipment Blob storage _"shipments"_
+	- <shipmentID>.json is saved into Shipment Blob storage _"otm-shipments"_
 
 4. A new event is published by event grid _"eg-itm"_.
 
@@ -93,27 +89,26 @@ The above flow is achieved in below listed logic apps :
 
 
 <br/><br/>
-### "la-create-order-shipment-relationship"
+### _"la-create-order-shipment-relationship"_
 <br/>
 
 
 
 1. As soon as the message is received in the queue _"q-shipment-received-from-otm"_, Logic app _"la-create-order-shipment-relationship"_ is triggered. 
 
-2. Shipment Json File path is read from the message. Json File is loaded from blob storage _"shipments"_.
+2. Shipment Json File path is read from the message. Json File is loaded from blob storage _"otm-shipments"_.
 
-3. Shipment json loaded from blob storage is sent in HTTP POST request to Function app _"translate-shipment"_. 
+3. Shipment json loaded from blob storage is sent in HTTP POST request to Function _"translate-shipment"_. 
 
-4. The function transforms full form Shipment into Simplfied Shipment json. The translated shipment contains an array of Orders having Order Id, Shipment Id, Shipment Source, Shipment destination. 
+4. The function transforms full form Shipment into Simplfied Shipment json.
 	
-
 5. For each Order in the Simplified Shipment
 
 	- complete Order entity is loaded from _"Order"_ table. 
 
 	- simplified shipment is added to list of Shipments in the Order entity
 	
-6. _Order-Shipment relationship_ defining json is created with Order and its associated List of _shipments_
+6. _Order-Shipment relationship_ defining json is created with Order and its associated List of _shipments_. The json is passed in HTTP POST request to function _"order-ready-for-consignment"_.
 	
 	 Sample Order-Shipment relationship json
 	
@@ -132,19 +127,18 @@ The above flow is achieved in below listed logic apps :
 			]
 		}
 		
-7. Order-Shipment relationship json is sent in HTTP POST request to function app _"order-ready-for-consignment"_. 
 
-8. The function app validates if all Shipments legs to fulfill the order from its source and destination are received. 
+7. The function validates if all Shipments legs to fulfill the order from its source and destination are received. 
 
-9. If the above function returns "YES", the status of Order is set to READY FOR CONSIGNMENT. 
+8. If the above function returns "YES", the status of Order is set to READY FOR CONSIGNMENT. 
 
-8. Updated Order with Shipments array and Order Status is saved in _"Order"_ table storage. 
+9. Updated Order with Shipments array and Order Status is saved in _"Order"_ table storage. 
 
-9. Simplified Shipment json is passed in HTTP POST request to Function app _"shipment-order-relationship"_. 
+10.	Simplified Shipment json is passed in HTTP POST request to Function app _"shipment-order-relationship"_. 
 
 	- A new _Shipment Order Relationship_ is created with Shipment having list of associated Orders. 
 	
-	Sample Shipmnet-Order relationship json
+	Sample Shipment-Order relationship json
 	
 		{
 		  "shipmentId": "I.01264",
@@ -158,15 +152,15 @@ The above flow is achieved in below listed logic apps :
 			  ]
 		}
 
-10.  Shipments with associated Order Ids is saved in Azure Table Storage _"Shipments"_.
+11.	Shipment with associated Order Ids is saved in Azure Table Storage _"Shipments"_.
 
-11.  A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders whose status is READY FOR CONSIGNMENT.
+12.	A new message is published to Service bus queue  _"q-ready-for-consignment"_ with list of orders whose status is READY FOR CONSIGNMENT.
 
 
 
 
 <br/><br/>
-### "la-create-consignment"
+### _"la-create-consignment"_
 <br/>
 
 
@@ -174,15 +168,15 @@ The above flow is achieved in below listed logic apps :
 
 2. List of orders ready for consignments is read from the message received from "q-ready-for-consignment". 
 
-3. For the first Order from Orders List, if the Order has Consignment ID already populated is verified.
+3. For the first Order from Orders List, it is verified if the Order already has Consignment ID in _"orders"_ table.
 	
-4. If yes, A new random Consignment Id <CSM><Random><Counter> is created. 
+	- If no, A new random Consignment Id is generated. 
 
-5. For the first Order, Full form Order json from Blob storage _"orders"_ is loaded. The Order json is copied to create new Consignment json. 
+4. For the first Order, Full form Order json from Blob storage _"orders"_ is loaded. The Order json is copied to create new Consignment json. 
 
 6. In the Consignment json
 
-	- Order Id is replaced with <consignmentId>, domain name is retained.
+	- Order Id is replaced with consignmentId, domain name is retained.
 	
 	- Ship unit array is emptied.
 	
@@ -193,11 +187,11 @@ The above flow is achieved in below listed logic apps :
 	 
 	 - Ship Units Array is extracted from Order json
 	 
-	 - Order Id in the Ship Units is replaced with <consignmentId>, domain name is retained
+	 - Order Id in the Ship Units is replaced with <consignmentId>, domain name is retained.
 		 
 	 - Ship Units array is passed in HTTP POST request to Function app _"add-order-release-tag"_  
 	 
-	 - The function adds attribute "tag1" in order release line of the ship unit as Order's original order release Id. A new counter 	    is created. For each ship unit the counter incremented and set in the following fields - 
+	 - The function adds attribute "tag1" in order release line of the ship unit as Order's original order release Id. A new counter is created. For each ship unit the counter incremented and set in the following fields - 
 	 
 	   shipUnit->shipUnitBeanData-> shipUnitXid,shipUnitGid ;
 	   
@@ -206,7 +200,7 @@ The above flow is achieved in below listed logic apps :
 	   shipUnit->shipUnitBeanData->shipUnitLine->shipUnitBeanData->orderReleaseLine->orderReleaseLineBeanData-> orderReleaseLineGid, orderReleaseLineXid
 	   
 	   
-	   Domain name is retained whereever applicable. 
+	   Domain name is retained. 
 	   
 	   
 	 	 
