@@ -73,9 +73,7 @@ The above flow is achieved in below listed logic apps :
 
 <br/><br/>
 ### "la-upload-shipment"
-<br/><br/>
-
-
+<br/>
 
 
 1. As soon as the Shipment is approved, OTM POSTs the Shipment XML to Logic app "la-upload-shipment". 
@@ -96,7 +94,7 @@ The above flow is achieved in below listed logic apps :
 
 <br/><br/>
 ### "la-create-order-shipment-relationship"
-<br/><br/>
+<br/>
 
 
 
@@ -123,6 +121,7 @@ The above flow is achieved in below listed logic apps :
 		  "orderId": "I.ITM-B9264A205ECC-001",
 		  "destination": "I.310-DT-1", (orderDestination)
 		  "source": "I.18748-SUP-8", (orderSource)
+		  
 		  "shipments": [
 				{
 				  "orderId": "I.ITM-B9264A205ECC-001",
@@ -168,7 +167,7 @@ The above flow is achieved in below listed logic apps :
 
 <br/><br/>
 ### "la-create-consignment"
-<br/><br/>
+<br/>
 
 
 1. As soon as the message is received in the queue _"q-ready-for-consignment"_, Logic app _"la-create-consignment"_ is triggered.
