@@ -37,73 +37,92 @@
 16. Azure Table Storage : "consignments"
 
 
-## Order App Flow
+## Consignment App Flow
 
 
 ![Image of Consignment Creation Flow](https://hclo365.sharepoint.com/:i:/r/sites/OTM_AzureTeam/Shared%20Documents/General/Helper-docs/ConsignmentApp-CreateConsignmentFlow.PNG?csf=1&web=1&e=IbIVio)
 
 
+### "la-upload-shipment"
 
-1. Once Shipment is approved, OTM POSTs the Shipment XML to Logic app _"la-upload-shipment"_. 
+1. As soon as the Shipment is approved, OTM POSTs the Shipment XML to Logic app "la-upload-shipment". 
 
-	- Shipment ID is created using domain name and Shipment Xid received in Shipment XML. GET request is made to OTM with query param as Shipment Id.
+2. Using using domain name and Shipment Xid received in Shipment XML, Shipment ID String is generated . 
+
+3. Shipment ID String is passed to OTM in HTTP GET request.
 	
 	- OTM responds back with  <shipmentID>.json
 
 	- <shipmentID>.json is saved into Shipment Blob storage _"shipments"_
 
-2. A new event is published by event grid _"eg-itm"_.
+4. A new event is published by event grid _"eg-itm"_.
 
-3. Event is handled by Service Bus Queue _"q-shipment-received-from-otm"_, message is received in the queue.
+5. Event is handled by Service Bus Queue _"q-shipment-received-from-otm"_, message is received in the queue.
 
-4. As soon as the message is received in the queue, Logic app _"la-create-order-shipment-relationship" is triggered. 
 
-	- The file path for shipment json file is read from the message and shipment json is loaded.
-	
-	- Function app _"translate-shipment"_ is called to transform full form Shipment into Simplfied Shipment. The translated shipment contains an array of Orders having Order Id, Shipment Id, Shipment Source, Shipment destination. 
+
+### "la-create-order-shipment-relationship"
+
+1. As soon as the message is received in the queue _"q-shipment-received-from-otm"_, Logic app _"la-create-order-shipment-relationship"_ is triggered. 
+
+2. Shipment Json File path is read from the message. Json File is loaded from blob storage _"shipments"_.
+
+3. Shipment json loaded from blob storage is sent in HTTP POST request to Function app _"translate-shipment"_. 
+
+4. The function transforms full form Shipment into Simplfied Shipment json. The translated shipment contains an array of Orders having Order Id, Shipment Id, Shipment Source, Shipment destination. 
 	
 	Sample Simplified Shipment with two orders : 
 	
-			[
-		  {
-			"orderId": "I.ITM-B9264A205ECC-001",
-			"shipmentId": "I.01264",
-			"source": "I.18748-SUP-8",
-			"destination": "I.310-DT-1"
-		  },
-		  {
-			"orderId": "I.ITM-B9264A205ECC-002",
-			"shipmentId": "I.01264",
-			"source": "I.18748-SUP-8",
-			"destination": "I.310-DT-1"
-		  }
+		[
+			  {
+				"orderId": "I.ITM-B9264A205ECC-001",
+				"shipmentId": "I.01264",
+				"source": "I.18748-SUP-8",
+				"destination": "I.310-DT-1"
+			  },
+			  {
+				"orderId": "I.ITM-B9264A205ECC-002",
+				"shipmentId": "I.01264",
+				"source": "I.18748-SUP-8",
+				"destination": "I.310-DT-1"
+			  }
 		]
 
-	- For each Order in the array, complete Order object is loaded from Order table
+5. For each Order in the Simplified Shipment
+
+	- complete Order entity is loaded from Order table. 
+
+	- simplified shipment is added to list of Shipments in the Order entity
 	
-	- A new Order-Shipment relationship defining json is created with Order Id, Order Source, Order Destination, Shipments array. Each shipment contains shipment Id, Shipment source, Shipment destination and Order Id. 
+6. Order-Shipment relationship defining json is created with Order and its associated List of _shipments_
 	
-	Sample Order-Shipment relationship json 
+	 Order-Shipment relationship json structure
 	
 		{
-		  "orderId": "I.ITM-B9264A205ECC-001",
-		  "destination": "I.310-DT-1",
-		  "source": "I.18748-SUP-8",
+		  "orderId": <orderID>,
+		  "destination": <orderDestination>,
+		  "source": <orderSource>,
 		  "shipments": [
 				{
-				  "orderId": "I.ITM-B9264A205ECC-001",
-				  "shipmentId": "I.01264",
-				  "source": "I.18748-SUP-8",
-				  "destination": "I.310-DT-1"
+				  "orderId": <orderID>,
+				  "shipmentId": <shipmentID>,
+				  "source": <shipmentSource>,
+				  "destination": <shipmentDestination>
+				}, 
+				{
+				  "orderId": <orderID>,
+				  "shipmentId": <shipmentID>,
+				  "source": <shipmentSource>,
+				  "destination": <shipmentDestination>
 				}
 			]
 		}
 		
-	- Order-Shipment relationship json is sent in HTTP POST request to function app _"order-ready-for-consignment"_. 
+7. Order-Shipment relationship json is sent in HTTP POST request to function app _"order-ready-for-consignment"_. 
 
-6. The function app "order-ready-for-consignment" checks if all Shipments legs to fulfill the order from its source and destination are received. It returns "YES/NO".
+8. The function app validates if all Shipments legs to fulfill the order from its source and destination are received. 
 
-7. If the above function returns "YES", the status of Order is set to READY FOR CONSGINMENT. 
+9. If the above function returns "YES", the status of Order is set to READY FOR CONSIGNMENT. 
 
 8. Updated Order with Shipments array and Order Status is saved in Order table storage. 
 
