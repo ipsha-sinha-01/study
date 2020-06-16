@@ -223,9 +223,7 @@ The above flow is achieved in below listed logic apps :
 
 8.  Full form Consignment json is saved into Azure Blob Storage _"consignments"_.
 
-9.  Consignment Id, list of assocaiated Order Ids is saved in _"consignments"_ table. 
-
-10.  Order entry in _"Order"_ table is updated with the consignment Id. 
+9.  Consignment Id, list of assocaiated Order Ids is saved in _"consignments"_ table. Order entry in _"Order"_ table is updated with the consignment Id. 
 
 
 
